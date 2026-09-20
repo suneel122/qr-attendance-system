@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Attendance System</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            background: #f4f4f9; 
+            padding: 20px; 
+        }
+        #reader { 
+            width: 100%; 
+            max-width: 350px; 
+            margin: 20px auto; 
+            background: #fff; 
+            padding: 10px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        }
+        #result { 
+            margin-top: 20px; 
+            font-size: 1.2rem; 
+            color: #2e7d32; 
+            font-weight: bold; 
+        }
+        .btn-container {
+            margin-top: 25px;
+        }
+        .download-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            transition: background 0.3s ease;
+        }
+        .download-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h2>📷 QR Attendance Scanner</h2>
+    <div id="reader"></div>
+    <div id="result">Scan QR Code to Mark Attendance</div>
+
+    <!-- Download Excel Button -->
+    <div class="btn-container">
+        <a href="export_excel.php" class="download-btn" target="_blank">
+            📊 Download Excel Report
+        </a>
+    </div>
+
+    <script>
+        let isProcessing = false;
+
+        function onScanSuccess(decodedText) {
+            if (isProcessing) return; // Prevent duplicate rapid scans
+            isProcessing = true;
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.color = "#d97706";
+            resultDiv.innerText = "⌛ Marking attendance for: " + decodedText;
+
+            // Use relative path to avoid IP mismatch & CORS issues
+            fetch('mark_attendance.php', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ student_id: decodedText })
+            })
+            .then(async res => {
+                const text = await res.text();
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    throw new Error("Invalid Server Response: " + text);
+                }
+            })
+            .then(data => {
+                if (data.status === 'success' || data.message) {
+                    resultDiv.style.color = "#2e7d32";
+                    resultDiv.innerText = "✅ " + data.message;
+                } else {
+                    resultDiv.style.color = "#dc2626";
+                    resultDiv.innerText = "⚠️ " + (data.error || "Unknown Error");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                resultDiv.style.color = "#dc2626";
+                resultDiv.innerText = "❌ Connection Failed! Check Console";
+            })
+            .finally(() => {
+                // Wait 3 seconds before enabling scanner again
+                setTimeout(() => { isProcessing = false; }, 3000);
+            });
+        }
+
+        let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
+</body>
+</html>
