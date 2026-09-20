@@ -1,4 +1,4 @@
-# 📷 QR Code Attendance System (BSCS 7B)
+# 📷 QR Code Attendance System
 
 A reliable, lightweight, and local network-based QR Code Attendance System developed using **HTML5, JavaScript, PHP, and MySQL (XAMPP)**. Designed specifically for university class sections (e.g., BSCS 7B) to automate daily attendance tracking, prevent duplicate entries, map student Roll Numbers to Real Names, and generate Excel reports.
 
